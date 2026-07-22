@@ -9,16 +9,15 @@ Edita estas listas para cambiar la composición del consejo.
 # evalúa (de forma anónima) las respuestas de los demás.
 COUNCIL_MEMBERS: list[str] = [
     "claude-opus-4-8",
-    "claude-sonnet-5",
-    "claude-haiku-4-5",
 ]
 
 # Modelo "presidente" que sintetiza la respuesta final a partir de todas las
 # respuestas y rankings del consejo.
-CHAIRMAN_MODEL: str = "claude-opus-4-8"
+CHAIRMAN_MODEL: str = "claude-fable-5"
 
 # Nombres legibles para mostrar en la interfaz.
 MODEL_DISPLAY_NAMES: dict[str, str] = {
+    "claude-fable-5": "Claude Fable 5",
     "claude-opus-4-8": "Claude Opus 4.8",
     "claude-opus-4-7": "Claude Opus 4.7",
     "claude-sonnet-5": "Claude Sonnet 5",
