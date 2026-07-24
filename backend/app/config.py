@@ -34,3 +34,13 @@ def display_name(model_id: str) -> str:
 ANSWER_MAX_TOKENS = 4096      # respuesta individual de cada miembro
 REVIEW_MAX_TOKENS = 2048      # evaluación estructurada (ranking)
 CHAIRMAN_MAX_TOKENS = 16000   # síntesis final (en streaming)
+
+
+# --------------------------------------------------------------------------- #
+# Instrumento digital del Capítulo 1 (propósito del consejo)
+# --------------------------------------------------------------------------- #
+# Agente que pondera y propone un dictamen preliminar a partir del cuestionario
+# de propósito. Principio rector: el agente pondera y propone; el consultor
+# califica y decide. Conviene un modelo con juicio cuidadoso.
+CAPITULO1_MODEL: str = "claude-opus-4-8"
+CAPITULO1_MAX_TOKENS = 8000

@@ -1,8 +1,15 @@
-# Reclaude — Metodología de consejo (LLM Council)
+# Reclaude — Arquitectura de Consejo
 
-Una app web donde un **consejo de modelos Claude** delibera sobre tu pregunta:
-cada miembro responde por su cuenta, después se evalúan entre sí de forma
-anónima, y un modelo **presidente (chairman)** sintetiza la respuesta final.
+App web con dos herramientas, seleccionables desde la navegación superior:
+
+1. **Consejo de LLMs** — un consejo de modelos Claude delibera sobre tu
+   pregunta: cada miembro responde por su cuenta, después se evalúan entre sí de
+   forma anónima, y un modelo **presidente (chairman)** sintetiza la respuesta
+   final.
+2. **Capítulo 1 · Propósito** — el instrumento digital del Capítulo 1 de la
+   metodología «Arquitectura de Consejo»: captura el cuestionario de propósito y
+   un agente produce un **dictamen preliminar**. Principio rector: *el agente
+   pondera y propone; el consultor califica y decide.*
 
 ## Cómo funciona el consejo
 
@@ -21,14 +28,40 @@ La consulta pasa por tres etapas:
 Todo el progreso se emite al navegador mediante **Server-Sent Events (SSE)**,
 de modo que ves cada etapa en tiempo real.
 
+## Cómo funciona el Capítulo 1 (propósito del consejo)
+
+El instrumento acompaña la entrevista de propósito al propietario:
+
+1. **Captura** — datos del entrevistado y la empresa; diez preguntas en tres
+   bloques (situación, disposición, expectativa). Cada pregunta (1–9) tiene un
+   campo de respuesta y un campo de **observaciones del consultor** (titubeos,
+   molestias, contexto), que el agente pondera con el mismo peso que el texto.
+   La pregunta 10 ordena tres de los seis propósitos con tarjetas (1º, 2º, 3º).
+2. **Análisis** — el botón «Generar análisis del agente» se activa con al menos
+   seis respuestas y el orden de propósitos completo.
+3. **Dictamen** — el agente devuelve, siempre rotulado como *preliminar, sujeto
+   al juicio del consultor*: tres **semáforos** (gobierno vs. validación,
+   permeabilidad al consejo ajeno, coherencia de expectativa), la **jerarquía de
+   propósitos** (dominante + dos secundarios) fundada en las respuestas, los
+   **puntos para la sesión de devolución**, un **borrador de declaración de
+   propósito** y la **recomendación final** (proceder / proceder con reservas /
+   esperar).
+4. **Alternativa** — «Exportar para analizar en Claude» compila toda la captura
+   en texto (con el prompt del agente) para pegarla en una conversación con
+   Claude cuando el canal integrado no esté disponible.
+
 ## Arquitectura
 
 ```
 backend/   FastAPI + SDK oficial `anthropic` (async)
-  app/config.py    Composición del consejo (miembros + chairman)
-  app/council.py   Lógica de las 3 etapas
-  app/main.py      Endpoint SSE /api/council + servir el frontend
-frontend/  React + Vite (SPA que consume el stream SSE)
+  app/config.py      Composición del consejo + modelo del agente del Cap. 1
+  app/council.py     Lógica de las 3 etapas del consejo de LLMs
+  app/capitulo1.py   Cuestionario de propósito + agente del dictamen preliminar
+  app/models.py      Esquemas Pydantic (consejo y Capítulo 1)
+  app/main.py        Endpoints SSE /api/council, /api/capitulo1/* + frontend
+frontend/  React + Vite (SPA)
+  src/components/     Vista del consejo de LLMs (SSE)
+  src/capitulo1/      Vista del Capítulo 1 (captura, dictamen, exportación)
 ```
 
 Todos los miembros son modelos de Claude, así que basta una única
@@ -95,6 +128,10 @@ curl -N -X POST localhost:8000/api/council \
 
 Verás llegar los eventos SSE `members`, `rankings`, `final_delta` y `done`.
 
+El instrumento del Capítulo 1 expone dos endpoints: `GET
+/api/capitulo1/cuestionario` (bloques, preguntas y los seis propósitos) y `POST
+/api/capitulo1/analizar` (recibe la captura y devuelve el dictamen estructurado).
+
 ## Personalización
 
 - **Composición del consejo:** edita `COUNCIL_MEMBERS` y `CHAIRMAN_MODEL` en
@@ -102,6 +139,9 @@ Verás llegar los eventos SSE `members`, `rankings`, `final_delta` y `done`.
 - **Límites de tokens por etapa:** `ANSWER_MAX_TOKENS`, `REVIEW_MAX_TOKENS`,
   `CHAIRMAN_MAX_TOKENS` en el mismo archivo.
 - **Prompts:** los system prompts de cada etapa están en `backend/app/council.py`.
+- **Agente del Capítulo 1:** modelo y tokens en `CAPITULO1_MODEL` /
+  `CAPITULO1_MAX_TOKENS` (`config.py`); el cuestionario, los propósitos y las
+  reglas de ponderación del agente están en `backend/app/capitulo1.py`.
 
 ## Notas
 

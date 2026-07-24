@@ -252,3 +252,395 @@ header h1 {
   color: var(--error);
   font-size: 0.9rem;
 }
+
+/* --- Navegación entre vistas --- */
+.vista-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.vista-tab {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.vista-tab.active {
+  color: #0b0d11;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- Capítulo 1: captura --- */
+.bloque-sub {
+  margin: -0.5rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+}
+
+.meta-grid label,
+.pregunta label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.meta-grid input,
+.pregunta textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.meta-grid input:focus,
+.pregunta textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pregunta {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.pregunta:first-of-type {
+  border-top: none;
+  padding-top: 0.25rem;
+}
+
+.pregunta-texto {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0 0 0.6rem;
+  font-size: 0.98rem;
+}
+
+.pregunta-num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.pregunta textarea {
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+
+.pregunta .observaciones {
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-style: dashed;
+}
+
+/* --- Pregunta 10: tarjetas de propósitos --- */
+.propositos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+
+.proposito-card {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  text-align: left;
+  padding: 0.8rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.proposito-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.proposito-card.seleccionado {
+  border-color: var(--accent);
+  background: rgba(110, 168, 254, 0.12);
+}
+
+.proposito-rank {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 50%;
+  color: #0b0d11;
+  background: var(--accent);
+}
+
+.proposito-card:not(.seleccionado) .proposito-rank {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+.proposito-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.proposito-nombre {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.proposito-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* --- Acciones --- */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.btn-primario,
+.btn-secundario {
+  padding: 0.65rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-primario {
+  color: #0b0d11;
+  background: var(--accent);
+  border: none;
+}
+
+.btn-primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secundario {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.gate-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* --- Capítulo 1: dictamen --- */
+.stage.dictamen {
+  border-color: var(--accent-2);
+}
+
+.preliminar {
+  margin: -0.4rem 0 1.2rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  color: var(--accent-2);
+  background: rgba(126, 226, 184, 0.1);
+  border-radius: 8px;
+}
+
+.dic-sub {
+  margin: 1.5rem 0 0.7rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.semaforos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.semaforo {
+  padding: 0.8rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 10px;
+}
+
+.sem-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.sem-punto {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.sem-nombre {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.sem-color {
+  margin-left: auto;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.sem-fundamento {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.sem-verde {
+  border-left-color: #4ade80;
+}
+.sem-verde .sem-punto {
+  background: #4ade80;
+}
+.sem-amarillo {
+  border-left-color: #facc15;
+}
+.sem-amarillo .sem-punto {
+  background: #facc15;
+}
+.sem-rojo {
+  border-left-color: var(--error);
+}
+.sem-rojo .sem-punto {
+  background: var(--error);
+}
+
+.prop-dominante,
+.prop-secundario {
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.6rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.prop-dominante {
+  border-color: var(--accent);
+}
+
+.prop-etiqueta {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  color: #0b0d11;
+  background: var(--accent);
+}
+
+.prop-etiqueta.secundaria {
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.devolucion {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.devolucion li {
+  margin-bottom: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.borrador {
+  padding: 0.9rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.92rem;
+}
+
+.recomendacion {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+
+.rec-decision {
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-transform: capitalize;
+}
+
+.rec-fundamento {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.rec-proceder {
+  border-left-color: #4ade80;
+}
+.rec-proceder .rec-decision {
+  color: #4ade80;
+}
+.rec-reservas {
+  border-left-color: #facc15;
+}
+.rec-reservas .rec-decision {
+  color: #facc15;
+}
+.rec-esperar {
+  border-left-color: var(--error);
+}
+.rec-esperar .rec-decision {
+  color: var(--error);
+}
