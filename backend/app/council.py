@@ -20,7 +20,7 @@ from typing import Any, AsyncGenerator
 import anthropic
 
 from . import config
-from .models import Ranking
+from .models import Document, Ranking
 
 # Un único cliente asíncrono; todos los modelos Claude comparten ANTHROPIC_API_KEY,
 # que el SDK resuelve automáticamente desde el entorno.
@@ -32,10 +32,31 @@ def _extract_text(message: anthropic.types.Message) -> str:
     return "".join(block.text for block in message.content if block.type == "text").strip()
 
 
+def _documents_block(documents: list[Document]) -> str:
+    """Formatea los archivos adjuntos como un bloque de contexto, o "" si no hay."""
+    if not documents:
+        return ""
+    parts = [
+        "El usuario ha adjuntado los siguientes documentos como contexto. "
+        "Tenlos en cuenta al responder:",
+    ]
+    for doc in documents:
+        parts.append(f"\n<documento nombre=\"{doc.name}\">\n{doc.content}\n</documento>")
+    return "\n".join(parts)
+
+
+def _user_content(query: str, documents: list[Document]) -> str:
+    """Combina los documentos adjuntos (si los hay) con la pregunta del usuario."""
+    block = _documents_block(documents)
+    if not block:
+        return query
+    return f"{block}\n\nPregunta:\n{query}"
+
+
 # --------------------------------------------------------------------------- #
 # Etapa 1: respuestas individuales
 # --------------------------------------------------------------------------- #
-async def _member_answer(model: str, query: str) -> dict[str, Any]:
+async def _member_answer(model: str, query: str, documents: list[Document]) -> dict[str, Any]:
     """Pide a un miembro su respuesta independiente a la consulta."""
     try:
         message = await _client.messages.create(
@@ -45,9 +66,10 @@ async def _member_answer(model: str, query: str) -> dict[str, Any]:
             system=(
                 "Eres un miembro de un consejo de expertos. Responde a la pregunta "
                 "del usuario de la forma más precisa, útil y bien razonada posible. "
+                "Si se adjuntan documentos de contexto, básate en ellos. "
                 "Responde en el mismo idioma que la pregunta."
             ),
-            messages=[{"role": "user", "content": query}],
+            messages=[{"role": "user", "content": _user_content(query, documents)}],
         )
         return {
             "model": model,
@@ -178,8 +200,12 @@ def _build_chairman_context(
     query: str,
     answers: list[dict[str, Any]],
     rankings: list[dict[str, Any]],
+    documents: list[Document],
 ) -> str:
     parts = [f"Pregunta del usuario:\n{query}\n"]
+    docs_block = _documents_block(documents)
+    if docs_block:
+        parts.append(docs_block + "\n")
     parts.append("Respuestas de los miembros del consejo:")
     for a in answers:
         if a["error"]:
@@ -202,8 +228,9 @@ async def _chairman_stream(
     query: str,
     answers: list[dict[str, Any]],
     rankings: list[dict[str, Any]],
+    documents: list[Document],
 ) -> AsyncGenerator[str, None]:
-    context = _build_chairman_context(query, answers, rankings)
+    context = _build_chairman_context(query, answers, rankings, documents)
     async with _client.messages.stream(
         model=config.CHAIRMAN_MODEL,
         max_tokens=config.CHAIRMAN_MAX_TOKENS,
@@ -227,12 +254,15 @@ async def _chairman_stream(
 # --------------------------------------------------------------------------- #
 # Orquestador
 # --------------------------------------------------------------------------- #
-async def run_council(query: str) -> AsyncGenerator[dict[str, Any], None]:
+async def run_council(
+    query: str, documents: list[Document] | None = None
+) -> AsyncGenerator[dict[str, Any], None]:
     """Ejecuta las tres etapas y emite eventos de progreso."""
     members = config.COUNCIL_MEMBERS
+    documents = documents or []
 
     # Etapa 1 — respuestas en paralelo.
-    answers = await asyncio.gather(*(_member_answer(m, query) for m in members))
+    answers = await asyncio.gather(*(_member_answer(m, query, documents) for m in members))
     answers = list(answers)
     yield {"event": "members", "data": {"answers": answers}}
 
@@ -250,7 +280,7 @@ async def run_council(query: str) -> AsyncGenerator[dict[str, Any], None]:
 
     # Etapa 3 — síntesis del chairman en streaming.
     try:
-        async for delta in _chairman_stream(query, answers, rankings):
+        async for delta in _chairman_stream(query, answers, rankings, documents):
             yield {"event": "final_delta", "data": {"text": delta}}
     except Exception as exc:  # noqa: BLE001
         yield {"event": "error", "data": {"message": f"{type(exc).__name__}: {exc}"}}

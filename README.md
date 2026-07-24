@@ -21,6 +21,18 @@ La consulta pasa por tres etapas:
 Todo el progreso se emite al navegador mediante **Server-Sent Events (SSE)**,
 de modo que ves cada etapa en tiempo real.
 
+## Adjuntar documentos (Markdown)
+
+Puedes **adjuntar archivos de texto** (`.md`, `.markdown`, `.mdx`, `.txt`) como
+contexto para la consulta con el botón **📎 Adjuntar archivos MD**. Los archivos
+se leen en el navegador y su contenido se envía junto con la pregunta; el consejo
+lo tiene en cuenta tanto en las respuestas individuales como en la síntesis del
+chairman. Puedes adjuntar varios y quitarlos antes de consultar.
+
+> Por seguridad, el navegador solo puede leer los archivos que tú seleccionas o
+> arrastras explícitamente: no hay acceso automático a tu disco ni a carpetas de
+> proyecto.
+
 ## Arquitectura
 
 ```

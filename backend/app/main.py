@@ -31,7 +31,7 @@ async def council(request: CouncilRequest) -> StreamingResponse:
 
     async def event_stream() -> AsyncGenerator[str, None]:
         try:
-            async for message in run_council(request.query):
+            async for message in run_council(request.query, request.documents):
                 yield _sse(message["event"], message["data"])
         except Exception as exc:  # noqa: BLE001
             yield _sse("error", {"message": f"{type(exc).__name__}: {exc}"})

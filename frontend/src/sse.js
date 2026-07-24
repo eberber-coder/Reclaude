@@ -1,10 +1,10 @@
 // Cliente SSE sobre fetch POST (EventSource solo admite GET).
 // Lee el cuerpo del stream y despacha cada bloque `event:/data:` a `onEvent`.
-export async function streamCouncil(query, onEvent, signal) {
+export async function streamCouncil(query, documents, onEvent, signal) {
   const response = await fetch("/api/council", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, documents: documents || [] }),
     signal,
   });
 

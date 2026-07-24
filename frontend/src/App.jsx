@@ -7,6 +7,7 @@ import FinalAnswer from "./components/FinalAnswer.jsx";
 
 export default function App() {
   const [query, setQuery] = useState("");
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [answers, setAnswers] = useState(null);
   const [rankings, setRankings] = useState(null);
@@ -36,6 +37,7 @@ export default function App() {
     try {
       await streamCouncil(
         query,
+        documents,
         (event, data) => {
           switch (event) {
             case "members":
@@ -84,6 +86,8 @@ export default function App() {
       <QueryInput
         query={query}
         setQuery={setQuery}
+        documents={documents}
+        setDocuments={setDocuments}
         onSubmit={submit}
         loading={loading}
       />

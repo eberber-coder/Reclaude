@@ -3,10 +3,21 @@
 from pydantic import BaseModel, Field
 
 
+class Document(BaseModel):
+    """Un archivo de contexto adjuntado por el usuario (p. ej. un `.md`)."""
+
+    name: str = Field(..., min_length=1, description="Nombre del archivo")
+    content: str = Field(..., description="Contenido de texto del archivo")
+
+
 class CouncilRequest(BaseModel):
     """Petición entrante con la consulta del usuario."""
 
     query: str = Field(..., min_length=1, description="La pregunta para el consejo")
+    documents: list[Document] = Field(
+        default_factory=list,
+        description="Archivos de contexto adjuntos (Markdown u otro texto)",
+    )
 
 
 class Ranking(BaseModel):
