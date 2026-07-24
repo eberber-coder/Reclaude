@@ -1,0 +1,24 @@
+# Dependencias y artefactos de build (se generan dentro de la imagen)
+**/node_modules
+**/dist
+**/.vite
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+**/env
+
+# Secretos y entorno local — nunca deben entrar en la imagen
+**/.env
+!**/.env.example
+
+# Git y metadatos
+.git
+.gitignore
+
+# Documentación y material que no afecta al runtime
+standalone
+DEPLOY.md
+README.md

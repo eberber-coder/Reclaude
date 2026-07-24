@@ -1,0 +1,12 @@
+# Blueprint de Render (https://render.com). Al conectar este repositorio como
+# "Blueprint", Render lee este archivo y crea el servicio automáticamente.
+services:
+  - type: web
+    name: reclaude
+    runtime: docker
+    plan: free            # el nivel gratuito "duerme" tras inactividad; sube a "starter" para dejarlo siempre activo
+    branch: claude/new-session-o5q4jv
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false        # se introduce a mano en el panel de Render; no se guarda en el repo

@@ -11,6 +11,17 @@ App web con dos herramientas, seleccionables desde la navegación superior:
    un agente produce un **dictamen preliminar**. Principio rector: *el agente
    pondera y propone; el consultor califica y decide.*
 
+## Dos formas de usar el Capítulo 1
+
+- **App alojada (agente integrado):** despliega la app en la nube y el botón
+  «Generar análisis del agente» funciona de principio a fin. Guía paso a paso en
+  [`DEPLOY.md`](./DEPLOY.md).
+- **Artefacto autónomo (`standalone/capitulo1.html`):** un solo archivo HTML que
+  captura el cuestionario y **exporta el texto** (con el prompt del agente) para
+  analizarlo pegándolo en una conversación con Claude. No necesita servidor ni
+  clave; se puede publicar como artefacto de claude.ai y abrir en Safari. Es el
+  modo «Alternativa» del documento maestro.
+
 ## Cómo funciona el consejo
 
 La consulta pasa por tres etapas:
@@ -117,6 +128,19 @@ cd ../backend && uvicorn app.main:app
 
 FastAPI servirá la SPA en `http://localhost:8000/` (monta `frontend/dist` si
 existe) y el endpoint del consejo en `/api/council`.
+
+### Desplegar en la nube (URL pública)
+
+El repo incluye `Dockerfile` (imagen única: construye el frontend y lo sirve
+desde el backend) y `render.yaml` (blueprint de Render). Con Docker basta:
+
+```bash
+docker build -t reclaude .
+docker run -p 8000:8000 -e ANTHROPIC_API_KEY=sk-ant-… reclaude
+```
+
+Para obtener una URL `https://…` abrible desde Safari (iPhone/iPad/Mac), sigue la
+guía paso a paso en [`DEPLOY.md`](./DEPLOY.md).
 
 ## Probar el endpoint directamente
 

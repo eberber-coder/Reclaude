@@ -1,0 +1,935 @@
+<!--
+  Instrumento digital del Capítulo 1 · Arquitectura de Consejo
+  Versión autónoma (un solo archivo, sin backend). Captura el cuestionario de
+  propósito y exporta el texto —con el prompt del agente— para analizarlo en una
+  conversación con Claude. Principio rector: el agente pondera y propone; el
+  consultor califica y decide.
+-->
+<style>
+  :root {
+    --paper: #f4f6f9;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --ink: #16273d;
+    --muted: #5a6b80;
+    --faint: #8a97a8;
+    --navy: #1f3b5c;
+    --navy-soft: #dbe3ec;
+    --brass: #9a7b2e;
+    --brass-ink: #ffffff;
+    --line: #d7dee7;
+    --line-strong: #c3cdd9;
+    --ok: #2f7d55;
+    --focus: #2e5c8a;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+      Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto,
+      Helvetica, Arial, sans-serif;
+
+    --maxw: 760px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1620;
+      --surface: #17212e;
+      --surface-2: #1e2a39;
+      --ink: #e8ecf2;
+      --muted: #9fadbe;
+      --faint: #74839a;
+      --navy: #9db8d6;
+      --navy-soft: #24374d;
+      --brass: #c79a3e;
+      --brass-ink: #16273d;
+      --line: #2a3746;
+      --line-strong: #384857;
+      --ok: #5cc088;
+      --focus: #7fb0e6;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --paper: #f4f6f9;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --ink: #16273d;
+    --muted: #5a6b80;
+    --faint: #8a97a8;
+    --navy: #1f3b5c;
+    --navy-soft: #dbe3ec;
+    --brass: #9a7b2e;
+    --brass-ink: #ffffff;
+    --line: #d7dee7;
+    --line-strong: #c3cdd9;
+    --ok: #2f7d55;
+    --focus: #2e5c8a;
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0e1620;
+    --surface: #17212e;
+    --surface-2: #1e2a39;
+    --ink: #e8ecf2;
+    --muted: #9fadbe;
+    --faint: #74839a;
+    --navy: #9db8d6;
+    --navy-soft: #24374d;
+    --brass: #c79a3e;
+    --brass-ink: #16273d;
+    --line: #2a3746;
+    --line-strong: #384857;
+    --ok: #5cc088;
+    --focus: #7fb0e6;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 4vw, 2rem) 8rem;
+  }
+
+  /* --- Encabezado fijo --- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0.7rem clamp(1rem, 4vw, 2rem);
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .mark {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 0.98rem;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .mark small {
+    display: block;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+
+  .progress {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .meter {
+    width: 84px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .meter > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--brass);
+    transition: width 0.35s ease;
+  }
+
+  /* --- Portada --- */
+  header.hero {
+    padding: 2.6rem 0 1.4rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 600;
+    margin: 0 0 0.6rem;
+  }
+  header.hero h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(1.9rem, 5vw, 2.5rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 0.7rem;
+  }
+  .lede {
+    font-size: 1.02rem;
+    color: var(--muted);
+    max-width: 52ch;
+    margin: 0;
+  }
+  .principio {
+    margin: 1.4rem 0 0;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--brass);
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--ink);
+  }
+
+  /* --- Secciones --- */
+  section.panel {
+    margin-top: 2.2rem;
+  }
+  .panel > h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.28rem;
+    margin: 0 0 0.15rem;
+  }
+  .panel > .sub {
+    margin: 0 0 1.2rem;
+    color: var(--faint);
+    font-style: italic;
+    font-size: 0.92rem;
+  }
+
+  /* Datos de la entrevista */
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.1rem;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+  .field > label {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  input,
+  textarea {
+    font-family: var(--sans);
+    font-size: 0.98rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    padding: 0.6rem 0.75rem;
+    width: 100%;
+  }
+  input:focus,
+  textarea:focus {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+    border-color: var(--focus);
+  }
+  textarea {
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  /* Bloques con regla de margen (documento encuadernado) */
+  .bloque {
+    position: relative;
+    padding-left: 1.4rem;
+    margin-top: 1.6rem;
+  }
+  .bloque::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    bottom: 0.35rem;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--navy);
+    opacity: 0.55;
+  }
+  .bloque-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.12rem;
+    margin: 0 0 0.1rem;
+  }
+  .bloque-sub {
+    margin: 0 0 1.1rem;
+    color: var(--faint);
+    font-style: italic;
+    font-size: 0.88rem;
+  }
+
+  .pregunta {
+    padding: 1.05rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .bloque .pregunta:first-of-type {
+    border-top: none;
+    padding-top: 0.2rem;
+  }
+  .q-head {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    margin-bottom: 0.65rem;
+  }
+  .q-num {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: 50%;
+    background: var(--navy-soft);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.05rem;
+  }
+  .q-text {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--ink);
+  }
+  .respuesta {
+    margin-bottom: 0.5rem;
+  }
+  .obs-label {
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 600;
+    margin: 0.2rem 0 0.3rem;
+  }
+  .observaciones {
+    background: var(--surface-2);
+    border-style: dashed;
+    font-size: 0.92rem;
+  }
+
+  /* Pregunta 10 — tarjetas de propósitos */
+  .propositos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.7rem;
+  }
+  .prop {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    text-align: left;
+    padding: 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 11px;
+    color: var(--ink);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease,
+      transform 0.05s ease;
+  }
+  .prop:hover {
+    border-color: var(--navy);
+  }
+  .prop:active {
+    transform: translateY(1px);
+  }
+  .prop:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .prop.on {
+    border-color: var(--brass);
+    background: color-mix(in srgb, var(--brass) 10%, var(--surface));
+  }
+  .prop:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .rank {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--brass-ink);
+    background: var(--brass);
+  }
+  .prop:not(.on) .rank {
+    background: transparent;
+    color: var(--faint);
+    border: 1px dashed var(--line-strong);
+  }
+  .prop-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+  .prop-name {
+    font-weight: 600;
+    font-size: 0.94rem;
+  }
+  .prop-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* --- Barra de acción fija --- */
+  .actionbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-top: 1px solid var(--line);
+  }
+  .actionbar-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0.75rem clamp(1rem, 4vw, 2rem);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  button.primary {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 650;
+    color: var(--brass-ink);
+    background: var(--brass);
+    padding: 0.7rem 1.25rem;
+    border-radius: 10px;
+    transition: filter 0.15s ease, transform 0.05s ease;
+  }
+  button.primary:hover {
+    filter: brightness(1.06);
+  }
+  button.primary:active {
+    transform: translateY(1px);
+  }
+  button.primary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  button.ghost {
+    appearance: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+  }
+  button.ghost:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .hint.ready {
+    color: var(--ok);
+    font-weight: 600;
+  }
+
+  .foot {
+    margin-top: 2.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: var(--faint);
+  }
+  .foot p {
+    margin: 0.3rem 0;
+  }
+
+  /* Aviso de copiado */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 5.2rem;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--navy);
+    color: #fff;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 40;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="mark">
+      Capítulo 1 · Propósito
+      <small>Arquitectura de Consejo</small>
+    </div>
+    <div class="progress" aria-hidden="true">
+      <span id="progressText">0 / 10</span>
+      <span class="meter"><i id="progressBar"></i></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Instrumento de captura</p>
+    <h1>Cuestionario de propósito del consejo</h1>
+    <p class="lede">
+      Entrevista al propietario o accionista controlador. Diez preguntas en tres
+      bloques; cada una con su respuesta y las observaciones del consultor, que
+      pesan tanto como lo que se dice.
+    </p>
+    <p class="principio">
+      El agente pondera y propone; el consultor califica y decide. Aquí capturas;
+      el análisis lo genera Claude con el botón de exportar.
+    </p>
+  </header>
+
+  <section class="panel">
+    <h2>Datos de la entrevista</h2>
+    <p class="sub">Contexto para el expediente de fundamentos.</p>
+    <div class="meta">
+      <div class="field">
+        <label for="m-entrevistado">Entrevistado</label>
+        <input id="m-entrevistado" data-meta="entrevistado" placeholder="Nombre" />
+      </div>
+      <div class="field">
+        <label for="m-cargo">Cargo / relación</label>
+        <input id="m-cargo" data-meta="cargo" placeholder="Propietario, accionista controlador…" />
+      </div>
+      <div class="field">
+        <label for="m-empresa">Empresa</label>
+        <input id="m-empresa" data-meta="empresa" placeholder="Razón social" />
+      </div>
+      <div class="field">
+        <label for="m-fecha">Fecha</label>
+        <input id="m-fecha" data-meta="fecha" placeholder="Julio de 2026" />
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="cuestionario"></section>
+
+  <footer class="foot">
+    <p>
+      Prototipo autónomo: la información no se guarda entre sesiones. Complétala y
+      expórtala en la misma sesión.
+    </p>
+    <p>
+      Sugerencia: en Safari, Compartir → «Agregar a pantalla de inicio» para
+      tenerlo a mano en el iPhone o iPad.
+    </p>
+  </footer>
+</div>
+
+<div class="actionbar">
+  <div class="actionbar-inner">
+    <button class="primary" id="btnCopiar">Copiar para analizar en Claude</button>
+    <button class="ghost" id="btnDescargar">Descargar .txt</button>
+    <span class="hint" id="gateHint"></span>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  (function () {
+    "use strict";
+
+    // --- Contenido (fuente única, espejo de backend/app/capitulo1.py) ---
+    var BLOQUES = [
+      {
+        titulo: "Bloque A — La situación",
+        sub: "revela la necesidad real",
+        preguntas: [
+          { id: 1, texto: "¿Cuáles fueron las tres decisiones más importantes de los últimos dos años, y quién participó en cada una?" },
+          { id: 2, texto: "¿Qué decisión reciente le habría gustado tomar de otra manera, y qué le faltó para hacerlo?" },
+          { id: 3, texto: "Si usted faltara mañana durante seis meses, ¿qué decisiones se detendrían?" }
+        ]
+      },
+      {
+        titulo: "Bloque B — La disposición",
+        sub: "revela si hay proyecto o simulación",
+        preguntas: [
+          { id: 4, texto: "Mencione una decisión concreta que hoy toma usted solo y que estaría dispuesto a someter a un consejo. ¿Y una que no cedería nunca?" },
+          { id: 5, texto: "¿Qué haría si el consejo le recomendara, por unanimidad, algo contrario a su convicción?" },
+          { id: 6, texto: "¿Ha tenido antes asesores o consejeros cuya opinión haya cambiado una decisión suya? Deme un ejemplo." },
+          { id: 7, texto: "¿Quién en su empresa o familia se opondría a la existencia de un consejo, y por qué?" }
+        ]
+      },
+      {
+        titulo: "Bloque C — La expectativa",
+        sub: "revela el propósito dominante",
+        preguntas: [
+          { id: 8, texto: "Complete la frase: «Quiero un consejo porque necesito que alguien decida / vigile / aporte ______, que hoy nadie hace»." },
+          { id: 9, texto: "¿Cómo sabría, dentro de tres años, que el consejo valió la pena? Descríbalo en resultados observables." },
+          { id: 10, texto: "De estos seis propósitos, ordene los tres principales.", tipo: "orden" }
+        ]
+      }
+    ];
+
+    var PROPOSITOS = [
+      { id: "decisiones", nombre: "Mejores decisiones", desc: "Experiencia, perspectiva externa y debate a decisiones que hoy toma una sola persona." },
+      { id: "contrapeso", nombre: "Contrapeso institucional", desc: "Someter el poder —incluso el del fundador— a un foro con reglas." },
+      { id: "continuidad", nombre: "Continuidad", desc: "Institucionalizar la empresa para que sobreviva a las personas: sucesión, memoria." },
+      { id: "patrimonio", nombre: "Protección patrimonial", desc: "Vigilancia de la administración, partes relacionadas y riesgos que no se ven." },
+      { id: "confianza", nombre: "Confianza ante terceros", desc: "Bancos y sucesores valoran una empresa gobernada; reduce el descuento por persona clave." },
+      { id: "separacion", nombre: "Separación familia–empresa", desc: "Un cauce para la familia como propietaria sin que gobierne desde la cocina." }
+    ];
+
+    var ORDINALES = ["1º", "2º", "3º"];
+
+    // --- Estado ---
+    var meta = { entrevistado: "", cargo: "", empresa: "", fecha: "" };
+    var respuestas = {}; // id -> { respuesta, observaciones }
+    var orden = []; // ids de propósitos, máx 3
+    var propGrid = null; // rejilla de tarjetas (pregunta 10)
+
+    // --- Utilidades DOM ---
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+
+    // --- Construcción del cuestionario ---
+    var cont = document.getElementById("cuestionario");
+
+    BLOQUES.forEach(function (bloque) {
+      var wrap = el("div", "bloque");
+      wrap.appendChild(el("h3", "bloque-title", bloque.titulo));
+      wrap.appendChild(el("p", "bloque-sub", bloque.sub));
+
+      bloque.preguntas.forEach(function (p) {
+        var q = el("div", "pregunta");
+        var head = el("div", "q-head");
+        head.appendChild(el("span", "q-num", String(p.id)));
+        head.appendChild(el("p", "q-text", p.texto));
+        q.appendChild(head);
+
+        if (p.tipo === "orden") {
+          q.appendChild(buildPropositos());
+        } else {
+          var ta = el("textarea", "respuesta");
+          ta.rows = 2;
+          ta.placeholder = "Respuesta del entrevistado…";
+          ta.setAttribute("aria-label", "Respuesta a la pregunta " + p.id);
+          ta.addEventListener("input", function () {
+            setResp(p.id, "respuesta", ta.value);
+          });
+          q.appendChild(ta);
+
+          q.appendChild(el("span", "obs-label", "Observaciones del consultor"));
+          var obs = el("textarea", "observaciones");
+          obs.rows = 1;
+          obs.placeholder = "Titubeos, molestias, lenguaje corporal, contexto…";
+          obs.setAttribute("aria-label", "Observaciones del consultor sobre la pregunta " + p.id);
+          obs.addEventListener("input", function () {
+            setResp(p.id, "observaciones", obs.value);
+          });
+          q.appendChild(obs);
+        }
+        wrap.appendChild(q);
+      });
+
+      cont.appendChild(wrap);
+    });
+
+    function buildPropositos() {
+      var grid = el("div", "propositos");
+      PROPOSITOS.forEach(function (prop) {
+        var btn = el("button", "prop");
+        btn.type = "button";
+        btn.setAttribute("aria-pressed", "false");
+        var rank = el("span", "rank", "");
+        var body = el("div", "prop-body");
+        body.appendChild(el("span", "prop-name", prop.nombre));
+        body.appendChild(el("span", "prop-desc", prop.desc));
+        btn.appendChild(rank);
+        btn.appendChild(body);
+        btn.addEventListener("click", function () {
+          toggleProp(prop.id);
+        });
+        btn._propId = prop.id;
+        btn._rank = rank;
+        grid.appendChild(btn);
+      });
+      grid._render = function () {
+        Array.prototype.forEach.call(grid.children, function (btn) {
+          var pos = orden.indexOf(btn._propId);
+          var on = pos !== -1;
+          btn.classList.toggle("on", on);
+          btn.setAttribute("aria-pressed", on ? "true" : "false");
+          btn._rank.textContent = on ? ORDINALES[pos] : "";
+          btn.disabled = !on && orden.length >= 3;
+        });
+      };
+      propGrid = grid;
+      return grid;
+    }
+
+    // --- Mutaciones de estado ---
+    function setResp(id, campo, val) {
+      if (!respuestas[id]) respuestas[id] = { respuesta: "", observaciones: "" };
+      respuestas[id][campo] = val;
+      updateProgress();
+    }
+    function toggleProp(id) {
+      var pos = orden.indexOf(id);
+      if (pos !== -1) orden.splice(pos, 1);
+      else if (orden.length < 3) orden.push(id);
+      if (propGrid) propGrid._render();
+      updateProgress();
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-meta]"), function (inp) {
+      inp.addEventListener("input", function () {
+        meta[inp.getAttribute("data-meta")] = inp.value;
+      });
+    });
+
+    // --- Progreso y compuerta ---
+    function contarRespondidas() {
+      var n = 0;
+      for (var i = 1; i <= 9; i++) {
+        if (respuestas[i] && respuestas[i].respuesta.trim()) n++;
+      }
+      return n;
+    }
+    function updateProgress() {
+      var respondidas = contarRespondidas();
+      var total = respondidas + (orden.length >= 3 ? 1 : 0);
+      document.getElementById("progressText").textContent = total + " / 10";
+      document.getElementById("progressBar").style.width = (total / 10) * 100 + "%";
+
+      var listo = respondidas >= 6 && orden.length >= 3;
+      var hint = document.getElementById("gateHint");
+      if (listo) {
+        hint.textContent = "Listo para exportar.";
+        hint.classList.add("ready");
+      } else {
+        hint.classList.remove("ready");
+        hint.textContent =
+          "Sugerido: 6 respuestas (" + respondidas + "/6) y el orden de propósitos (" + orden.length + "/3).";
+      }
+    }
+
+    // --- Prompt del agente + compilación del texto ---
+    var PROMPT = [
+      "Actúa como el agente de análisis del Capítulo 1 (Propósito del consejo) de la",
+      "metodología «Arquitectura de Consejo». Acompañas a un consultor de gobierno",
+      "corporativo que acaba de entrevistar al propietario de una empresa.",
+      "",
+      "PRINCIPIO RECTOR: tú ponderas y propones; el consultor califica y decide. Tu",
+      "dictamen es PRELIMINAR y está sujeto a su juicio. Las «observaciones del",
+      "consultor» pesan TANTO como el texto de la respuesta.",
+      "",
+      "Emite un dictamen con:",
+      "",
+      "1) TRES SEMÁFOROS (rojo / amarillo / verde) con fundamento breve:",
+      "   - «Gobierno vs. validación» (contraste P1 con P4): concentra todas las",
+      "     decisiones y cedería poco → rojo (busca validación); apertura genuina con",
+      "     decisiones concretas que someterá → verde; ambiguo → amarillo. Refuerza con",
+      "     P3 y P5.",
+      "   - «Permeabilidad al consejo ajeno» (P6): sin ejemplo concreto de una decisión",
+      "     cambiada por consejo ajeno → rojo; ejemplo vago → amarillo; ejemplo concreto",
+      "     → verde.",
+      "   - «Coherencia de expectativa» (P8 espontánea vs P10 asistida): coincide →",
+      "     verde; divergencia parcial → amarillo; contradicción → rojo. La divergencia",
+      "     es material de devolución, no un error.",
+      "",
+      "2) JERARQUÍA DE PROPÓSITOS: un dominante y hasta dos secundarios, fundados en las",
+      "   respuestas (no en la teoría). Respeta el orden de la P10 pero señala si las",
+      "   respuestas apuntan a otro propósito.",
+      "",
+      "3) PUNTOS PARA LA SESIÓN DE DEVOLUCIÓN: contradicciones como hallazgos (no",
+      "   reproches), prueba de consecuencia del propósito, y señales de éxito de la P9.",
+      "",
+      "4) BORRADOR DE DECLARACIÓN DE PROPÓSITO (una cuartilla): propósito dominante y",
+      "   secundarios; tres decisiones que el propietario someterá desde el primer año;",
+      "   señales de éxito a tres años; lo que el consejo NO será; nota de relectura en",
+      "   la primera autoevaluación anual.",
+      "",
+      "5) RECOMENDACIÓN FINAL: proceder / proceder con reservas / esperar (un rojo en",
+      "   gobierno o permeabilidad suele bastar para «esperar»; aconsejar esperar es un",
+      "   desenlace profesional, no un fracaso).",
+      "",
+      "Responde en español, sobrio y honesto, sin adulación ni venta.",
+      "",
+      "--- ENTREVISTA DE PROPÓSITO ---"
+    ].join("\n");
+
+    function compilar() {
+      var L = [PROMPT, ""];
+      var head = [];
+      if (meta.entrevistado) head.push("Entrevistado: " + meta.entrevistado);
+      if (meta.cargo) head.push("Cargo/relación: " + meta.cargo);
+      if (meta.empresa) head.push("Empresa: " + meta.empresa);
+      if (meta.fecha) head.push("Fecha: " + meta.fecha);
+      if (head.length) {
+        L.push("DATOS DE LA ENTREVISTA");
+        L = L.concat(head);
+        L.push("");
+      }
+
+      var nombreProp = {};
+      PROPOSITOS.forEach(function (p) { nombreProp[p.id] = p.nombre; });
+
+      BLOQUES.forEach(function (bloque) {
+        L.push(bloque.titulo + " (" + bloque.sub + ")");
+        bloque.preguntas.forEach(function (p) {
+          if (p.tipo === "orden") {
+            L.push("\nP" + p.id + ". " + p.texto);
+            if (orden.length) {
+              orden.forEach(function (id, i) {
+                L.push("  " + (i + 1) + "º — " + (nombreProp[id] || id));
+              });
+            } else {
+              L.push("  (sin orden capturado)");
+            }
+            return;
+          }
+          var r = respuestas[p.id] || {};
+          L.push("\nP" + p.id + ". " + p.texto);
+          L.push("Respuesta: " + ((r.respuesta || "").trim() || "(sin respuesta)"));
+          if ((r.observaciones || "").trim()) {
+            L.push("Observaciones del consultor: " + r.observaciones.trim());
+          }
+        });
+        L.push("");
+      });
+
+      return L.join("\n").trim() + "\n";
+    }
+
+    // --- Acciones ---
+    function toast(msg) {
+      var t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () {
+        t.classList.remove("show");
+      }, 2600);
+    }
+
+    document.getElementById("btnCopiar").addEventListener("click", function () {
+      var texto = compilar();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(
+          function () { toast("Copiado. Pégalo en una conversación con Claude."); },
+          function () { fallbackCopy(texto); }
+        );
+      } else {
+        fallbackCopy(texto);
+      }
+    });
+
+    function fallbackCopy(texto) {
+      var ta = document.createElement("textarea");
+      ta.value = texto;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        toast("Copiado. Pégalo en una conversación con Claude.");
+      } catch (e) {
+        toast("No se pudo copiar; usa «Descargar .txt».");
+      }
+      document.body.removeChild(ta);
+    }
+
+    document.getElementById("btnDescargar").addEventListener("click", function () {
+      var texto = compilar();
+      var blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      var quien = (meta.empresa || meta.entrevistado || "entrevista")
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      a.download = "proposito-" + (quien || "entrevista") + ".txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast("Archivo descargado.");
+    });
+
+    updateProgress();
+  })();
+</script>
