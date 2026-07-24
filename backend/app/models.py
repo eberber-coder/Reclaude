@@ -3,10 +3,31 @@
 from pydantic import BaseModel, Field
 
 
+class Attachment(BaseModel):
+    """Un archivo adjunto a la consulta (PDF, imagen o texto/código).
+
+    `data` son los bytes del archivo codificados en base64 (sin el prefijo
+    `data:`). `media_type` es el tipo MIME (p. ej. `application/pdf`,
+    `image/png`, `text/plain`); el backend decide cómo convertirlo en un
+    bloque de contenido de la API a partir de él.
+    """
+
+    filename: str = Field(..., description="Nombre del archivo, para mostrarlo y etiquetarlo")
+    media_type: str = Field(
+        default="application/octet-stream",
+        description="Tipo MIME del archivo (image/*, application/pdf, text/*, ...)",
+    )
+    data: str = Field(..., description="Contenido del archivo codificado en base64")
+
+
 class CouncilRequest(BaseModel):
     """Petición entrante con la consulta del usuario."""
 
     query: str = Field(..., min_length=1, description="La pregunta para el consejo")
+    attachments: list[Attachment] = Field(
+        default_factory=list,
+        description="Archivos adjuntos que el consejo debe tener en cuenta",
+    )
 
 
 class Ranking(BaseModel):

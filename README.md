@@ -21,6 +21,20 @@ La consulta pasa por tres etapas:
 Todo el progreso se emite al navegador mediante **Server-Sent Events (SSE)**,
 de modo que ves cada etapa en tiempo real.
 
+## Archivos adjuntos
+
+Puedes **adjuntar archivos** a tu consulta y el consejo los tendrá en cuenta:
+tanto los miembros (etapa 1) como el chairman (etapa 3) los reciben como
+bloques de contenido nativos de la API de Anthropic. Tipos admitidos:
+
+- **Imágenes** (`image/png`, `image/jpeg`, `image/gif`, `image/webp`).
+- **PDF** (`application/pdf`).
+- **Texto y código** (`text/*`, JSON, etc.): se envían como documento de texto.
+
+Los límites (tamaño por archivo, tamaño total y número de archivos) se
+configuran en `backend/app/config.py`. Los archivos inválidos o que exceden los
+límites se descartan con elegancia y la interfaz muestra un aviso.
+
 ## Arquitectura
 
 ```
@@ -94,6 +108,23 @@ curl -N -X POST localhost:8000/api/council \
 ```
 
 Verás llegar los eventos SSE `members`, `rankings`, `final_delta` y `done`.
+Si envías adjuntos que se descartan, también recibirás un evento `attachments`
+con los avisos.
+
+Para adjuntar archivos, añade un array `attachments` con `filename`,
+`media_type` y `data` (contenido en base64):
+
+```bash
+curl -N -X POST localhost:8000/api/council \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query": "Resume este documento",
+    "attachments": [
+      {"filename": "notas.txt", "media_type": "text/plain",
+       "data": "'$(base64 -w0 notas.txt)'"}
+    ]
+  }'
+```
 
 ## Personalización
 
@@ -101,6 +132,8 @@ Verás llegar los eventos SSE `members`, `rankings`, `final_delta` y `done`.
   `backend/app/config.py`.
 - **Límites de tokens por etapa:** `ANSWER_MAX_TOKENS`, `REVIEW_MAX_TOKENS`,
   `CHAIRMAN_MAX_TOKENS` en el mismo archivo.
+- **Límites de adjuntos:** `MAX_ATTACHMENT_BYTES`, `MAX_TOTAL_ATTACHMENT_BYTES`
+  y `MAX_ATTACHMENTS` en el mismo archivo.
 - **Prompts:** los system prompts de cada etapa están en `backend/app/council.py`.
 
 ## Notas

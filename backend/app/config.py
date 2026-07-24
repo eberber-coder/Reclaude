@@ -34,3 +34,8 @@ def display_name(model_id: str) -> str:
 ANSWER_MAX_TOKENS = 4096      # respuesta individual de cada miembro
 REVIEW_MAX_TOKENS = 2048      # evaluación estructurada (ranking)
 CHAIRMAN_MAX_TOKENS = 16000   # síntesis final (en streaming)
+
+# --- Límites de archivos adjuntos ---
+MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024        # tamaño máximo por archivo (8 MB)
+MAX_TOTAL_ATTACHMENT_BYTES = 24 * 1024 * 1024  # tamaño máximo del conjunto (24 MB)
+MAX_ATTACHMENTS = 10                            # nº máximo de archivos por consulta
