@@ -7,12 +7,13 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from . import capitulo1
 from .council import run_council
-from .models import CouncilRequest
+from .models import Capitulo1Request, CouncilRequest, Dictamen
 
 # Carga ANTHROPIC_API_KEY desde backend/.env si existe.
 load_dotenv()
@@ -46,6 +47,39 @@ async def council(request: CouncilRequest) -> StreamingResponse:
 @app.get("/api/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+# --- Instrumento digital del Capítulo 1 (propósito del consejo) ---
+@app.get("/api/capitulo1/cuestionario")
+async def capitulo1_cuestionario() -> dict:
+    """Estructura del cuestionario (bloques, preguntas) y los seis propósitos."""
+    return capitulo1.cuestionario_publico()
+
+
+@app.post("/api/capitulo1/analizar")
+async def capitulo1_analizar(request: Capitulo1Request) -> Dictamen:
+    """Genera el dictamen preliminar del agente a partir de la captura.
+
+    El botón «Generar análisis» del frontend se activa con al menos seis
+    respuestas y el orden de propósitos completo; el backend valida lo mismo.
+    """
+    respondidas = sum(1 for r in request.respuestas if r.respuesta.strip())
+    if respondidas < 6:
+        raise HTTPException(
+            status_code=422,
+            detail="Se requieren al menos seis respuestas para generar el análisis.",
+        )
+    if len(request.orden_propositos) < 3:
+        raise HTTPException(
+            status_code=422,
+            detail="Ordena los tres propósitos principales (pregunta 10) antes de analizar.",
+        )
+    try:
+        return await capitulo1.generar_dictamen(request)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=502, detail=f"{type(exc).__name__}: {exc}"
+        ) from exc
 
 
 # --- Servir el frontend construido (frontend/dist), si existe ---
